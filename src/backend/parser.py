@@ -42,7 +42,7 @@ def parse_bin_file(bin_path):
         
         print("finished, now writing")
         with open("parsed_telemetry.json", "w") as f:
-            json.dump(parsed_logs, f, indent=2)
+            json.dump(parsed_logs, f)
         print("writing done")
         return True
     except:
