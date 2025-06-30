@@ -98,6 +98,8 @@ def analyze_telemetry_data(instructions: str, hint: str) -> str:
     The tool takes a natural language instruction describing what to analyze, along with an optional hint indicating which ArduPilot Onboard Message Log Message types (e.g., GPS, ATT, IMU, ERR, MODE, CMD, NKF*) are relevant to the query. The output is a specific value or summary derived from the telemetry data. 
     This tool should be used only when the question requires analyzing data from the telemetry logs."""
 
+    print(hint)
+
     prompt = ChatPromptTemplate.from_messages([
     ("system", python_prompt),
     ("user", "{input}")

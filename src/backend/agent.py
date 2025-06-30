@@ -2,6 +2,8 @@ from agent_tools.python_tool import analyze_telemetry_data
 from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 import dotenv
 import os
 
@@ -55,9 +57,39 @@ class Agent:
     # def __repr__(self):
     #     return f"Agent(name={self.name}, description={self.description})"
 
+    def rag_context(self, user_request):
+
+        def load_vectorstore(path="rag_vector_store"):
+            """Load FAISS vector store using free HuggingFace embeddings"""
+            embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            return FAISS.load_local(path, embeddings)
+        
+        def query_vectorstore(query_text, top_k=3):
+            """Run similarity search against the vector store"""
+            vectorstore = FAISS.load_local(
+            "rag_vector_store",
+            HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"),
+            allow_dangerous_deserialization=True
+        )
+
+            results = vectorstore.similarity_search(query_text, k=top_k)
+
+            return_string = ""
+
+            for i, doc in enumerate(results, 1):
+                return_string += f"{doc.page_content}\n"
+                return_string += "--------------------------\n"
+
+            return f'Here are some relevant fields from the ARDU Pilot documentation. It may or may not be related to the question, ignore it if it isnt:\n {return_string}'
+
+        return query_vectorstore(user_request, top_k=2)
+
     def chat(self, user_request: str):
+        rag_context = self.rag_context(user_request)
+        full_user_request = f"{user_request}\n\nContext:\n{rag_context}"
+        print(full_user_request)
         response = self.agent.invoke(
-            {"messages": [{"role": "user", "content": user_request}]},
+            {"messages": [{"role": "user", "content": full_user_request}]},
             config=self.config )  
         try: 
             return response.get("messages", [])[-1].content
